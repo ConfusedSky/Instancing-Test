@@ -8,7 +8,6 @@ export function unsetDivisors(
   const unArrays = {} as any;
   divisors.forEach((divisor) => {
     unArrays[divisor] = {
-      numComponents: 0,
       data: [],
       divisor: 0,
     };

@@ -1,5 +1,5 @@
 import { FPSCounter } from "./fps-counter";
-import { IColor, Renderer } from "./renderer";
+import { IColor, Renderer } from "./renderers/renderer";
 
 const width = 1280;
 const height = 720;
