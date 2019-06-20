@@ -20,9 +20,9 @@ function renderLoop(current: number) {
     const v4 = new Float32Array(v3);
 
     renderer.startNextFrame();
+    renderer.drawSpecBox(current);
     renderer.drawBoxes(v2, 10, BLACK);
     renderer.drawBoxes(v4, 10, BLACK);
-    renderer.drawSpecBox();
 }
 
 requestAnimationFrame(renderLoop);

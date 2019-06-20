@@ -105,10 +105,22 @@ export class Renderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
 
-    public drawSpecBox() {
-        const translations = [
-            0.0, 0.0, .1, .1, .2, .2,
-        ];
+    public drawSpecBox(time: number) {
+        // const translations = [
+            // 0.0, 0.0, .1, .1, .2, .2,
+        // ];
+        const translations = (() => {
+            const res = [];
+            const offset = .1;
+            for (let y = -10; y < 10; y += 2) {
+                for (let x = -10; x < 10; x += 2) {
+                    res.push(x / 10 + offset + Math.cos(time / 500) * .05);
+                    res.push(y / 10 + offset + Math.sin(time / 500) * .05);
+                }
+            }
+            return res;
+        })();
+        console.log(translations);
         this.gl.useProgram(this.specProgram);
 
         this.gl.enableVertexAttribArray(this.A_SPEC_POS_LOC);
@@ -126,7 +138,7 @@ export class Renderer {
         this.gl.vertexAttribPointer(this.A_SPEC_OFFSET_LOC, 2, this.gl.FLOAT, false, 0, 0);
 
         this.ext.vertexAttribDivisorANGLE(this.A_SPEC_OFFSET_LOC, 1);
-        this.ext.drawArraysInstancedANGLE(this.gl.TRIANGLES, 0, 6, 3);
+        this.ext.drawArraysInstancedANGLE(this.gl.TRIANGLES, 0, 6, 100);
         // iOS rendering issue
         this.ext.vertexAttribDivisorANGLE(this.A_SPEC_OFFSET_LOC, 0);
 
