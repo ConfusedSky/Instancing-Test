@@ -1,3 +1,4 @@
+import * as twgl from "twgl.js";
 import { createProgram, createShader } from "./glUtils";
 
 export interface IRendererOptions {
@@ -15,14 +16,7 @@ export class Renderer {
     private width: number;
     private height: number;
     private gl: WebGLRenderingContext;
-    private program: WebGLProgram;
-
-    private buffer: WebGLBuffer;
-
-    private readonly A_POS_LOC: number;
-    private readonly U_RES_LOC: WebGLUniformLocation;
-    private readonly U_SIZE_LOC: WebGLUniformLocation;
-    private readonly U_COLOR_LOC: WebGLUniformLocation;
+    private program: twgl.ProgramInfo;
 
     private specProgram: WebGLProgram;
     private vertBuffer: WebGLProgram;
@@ -50,16 +44,7 @@ export class Renderer {
             throw new Error(); // Terminate execution
         }
 
-        const vertShader = this.initializeVertShader();
-        const fragShader = this.initializeFragShader();
-        this.program = createProgram(this.gl, vertShader, fragShader);
-        this.buffer = this.gl.createBuffer();
-        this.A_POS_LOC = this.gl.getAttribLocation(this.program, "a_position");
-        this.U_RES_LOC = this.gl.getUniformLocation(this.program, "u_resolution");
-        this.U_SIZE_LOC = this.gl.getUniformLocation(this.program, "u_size");
-        this.U_COLOR_LOC = this.gl.getUniformLocation(this.program, "u_color");
-        this.gl.useProgram(this.program);
-        this.gl.uniform2f(this.U_RES_LOC, this.width, this.height);
+        this.program = twgl.createProgramInfo(this.gl, ["vs", "fs"]);
 
         this.specProgram = createProgram(this.gl, this.initializeSpecVertShader(), this.initializeSpecFragShader());
         this.ext = this.gl.getExtension("ANGLE_instanced_arrays");
@@ -99,7 +84,8 @@ export class Renderer {
     }
 
     public startNextFrame() {
-        this.gl.viewport(0, 0, this.width, this.height);
+        twgl.resizeCanvasToDisplaySize(this.gl.canvas);
+        this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
 
         this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -120,7 +106,6 @@ export class Renderer {
             }
             return res;
         })();
-        console.log(translations);
         this.gl.useProgram(this.specProgram);
 
         this.gl.enableVertexAttribArray(this.A_SPEC_POS_LOC);
@@ -148,46 +133,20 @@ export class Renderer {
     }
 
     public drawBoxes(verts: Float32Array, size: number, color: IColor) {
-        this.gl.useProgram(this.program);
-        this.gl.enableVertexAttribArray(this.A_POS_LOC);
+        const bufferInfo = twgl.createBufferInfoFromArrays(this.gl, {
+            a_position: {data: verts, numComponents: 2},
+        });
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, verts, this.gl.STATIC_DRAW);
+        const uniforms = {
+            u_size: size,
+            u_resolution: [this.width, this.height],
+            u_color: [color.r, color.g, color.b, color.a],
+        };
 
-        this.gl.uniform1f(this.U_SIZE_LOC, size);
-        this.gl.uniform4f(this.U_COLOR_LOC, color.r, color.g, color.b, color.a);
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-        this.gl.vertexAttribPointer(this.A_POS_LOC, 2, this.gl.FLOAT, false, 0, 0);
-        this.gl.drawArrays(this.gl.POINTS, 0, verts.length / 2);
-
-        this.gl.disableVertexAttribArray(this.A_POS_LOC);
-    }
-
-    private initializeVertShader() {
-        return createShader(this.gl, this.gl.VERTEX_SHADER, `
-            attribute vec2 a_position;
-            uniform vec2 u_resolution;
-            uniform float u_size;
-
-            void main() {
-                vec2 zeroToOne = (a_position + (u_size / 2.0)) / u_resolution;
-                vec2 zeroToTwo = zeroToOne * 2.0;
-                vec2 clipSpace = zeroToTwo - 1.0;
-                gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-                gl_PointSize = u_size;
-            }
-        `);
-    }
-
-    private initializeFragShader() {
-        return createShader(this.gl, this.gl.FRAGMENT_SHADER, `
-            precision mediump float;
-            uniform vec4 u_color;
-            void main() {
-                gl_FragColor = u_color;
-            }
-        `);
+        this.gl.useProgram(this.program.program);
+        twgl.setBuffersAndAttributes(this.gl, this.program, bufferInfo);
+        twgl.setUniforms(this.program, uniforms);
+        twgl.drawBufferInfo(this.gl, bufferInfo, this.gl.POINTS);
     }
 
     private initializeSpecVertShader() {
