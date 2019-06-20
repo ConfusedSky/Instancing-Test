@@ -13,22 +13,19 @@ export class InstancedRenderer {
 
         const verts = [
             // positions
-            -0.05,  0.05,
-             0.05, -0.05,
             -0.05, -0.05,
-
             -0.05,  0.05,
              0.05, -0.05,
              0.05,  0.05,
         ];
         const colors = [
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
             0.0, 0.0, 1.0,
-
             1.0, 0.0, 0.0,
             0.0, 1.0, 0.0,
             0.0, 1.0, 1.0,
+        ];
+        const indices = [
+            0, 1, 2, 1, 2, 3,
         ];
         const arrays = {
             a_position: {
@@ -38,6 +35,10 @@ export class InstancedRenderer {
             a_color: {
                 numComponents: 3,
                 data: colors,
+            },
+            indices: {
+                data: indices,
+                numComponents: 1,
             },
         };
         this.bufferInfo = twgl.createBufferInfoFromArrays(this.gl, arrays);
