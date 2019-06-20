@@ -1,34 +1,20 @@
-export function createShader(
-    gl: WebGLRenderingContext,
-    type: number,
-    source: string,
+import * as twgl from "twgl.js";
+
+export function unsetDivisors(
+  gl: WebGLRenderingContext,
+  programInfo: twgl.ProgramInfo,
+  divisors: string[],
 ) {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-  if (success) {
-    return shader;
-  }
+  const unArrays = {} as any;
+  divisors.forEach((divisor) => {
+    unArrays[divisor] = {
+      numComponents: 0,
+      data: [],
+      divisor: 0,
+    };
+  });
 
-  console.log(gl.getShaderInfoLog(shader));
-  gl.deleteShader(shader);
-}
-
-export function createProgram(
-    gl: WebGLRenderingContext,
-    vertexShader: WebGLShader,
-    fragmentShader: WebGLShader,
-) {
-  const program = gl.createProgram();
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-  if (success) {
-    return program;
-  }
-
-  console.log(gl.getProgramInfoLog(program));
-  gl.deleteProgram(program);
+  const specBuffers = twgl.createBufferInfoFromArrays(gl, unArrays);
+  const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfo, specBuffers);
+  twgl.setBuffersAndAttributes(gl, programInfo, vertexArrayInfo);
 }

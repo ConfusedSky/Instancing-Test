@@ -1,5 +1,5 @@
 import * as twgl from "twgl.js";
-import { createProgram, createShader } from "./glUtils";
+import { unsetDivisors } from "./glUtils";
 
 export interface IRendererOptions {
     canvasID: string;
@@ -18,15 +18,8 @@ export class Renderer {
     private gl: WebGLRenderingContext;
     private program: twgl.ProgramInfo;
 
-    private specProgram: WebGLProgram;
-    private vertBuffer: WebGLProgram;
-    private colorBuffer: WebGLProgram;
-    private offsetBuffer: WebGLProgram;
-    private readonly A_SPEC_POS_LOC: number;
-    private readonly A_SPEC_OFFSET_LOC: number;
-    private readonly A_SPEC_COLOR_LOC: number;
-
-    private ext: ANGLE_instanced_arrays;
+    private specProgram: twgl.ProgramInfo;
+    private specBuffers: twgl.BufferInfo;
 
     constructor(width: number, height: number, options?: IRendererOptions) {
         const o = options || {} as IRendererOptions;
@@ -44,10 +37,15 @@ export class Renderer {
             throw new Error(); // Terminate execution
         }
 
-        this.program = twgl.createProgramInfo(this.gl, ["vs", "fs"]);
+        twgl.addExtensionsToContext(this.gl);
+        const glANY = this.gl as any;
+        if (!glANY.drawArraysInstanced || !glANY.createVertexArray) {
+            alert("need drawArraysInstanced and createVertexArray to run");
+            return;
+        }
 
-        this.specProgram = createProgram(this.gl, this.initializeSpecVertShader(), this.initializeSpecFragShader());
-        this.ext = this.gl.getExtension("ANGLE_instanced_arrays");
+        this.program = twgl.createProgramInfo(this.gl, ["vs", "fs"]);
+        this.specProgram = twgl.createProgramInfo(this.gl, ["s-vs", "s-fs"]);
 
         const verts = [
             // positions     // colors
@@ -68,19 +66,17 @@ export class Renderer {
             0.0, 1.0, 0.0,
             0.0, 1.0, 1.0,
         ];
-
-        this.vertBuffer = this.gl.createBuffer();
-        this.colorBuffer = this.gl.createBuffer();
-        this.offsetBuffer = this.gl.createBuffer();
-        this.A_SPEC_POS_LOC = this.gl.getAttribLocation(this.specProgram, "a_position");
-        this.A_SPEC_COLOR_LOC = this.gl.getAttribLocation(this.specProgram, "a_color");
-        this.A_SPEC_OFFSET_LOC = this.gl.getAttribLocation(this.specProgram, "a_translation");
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(verts), this.gl.STATIC_DRAW);
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
+        const arrays = {
+            a_position: {
+                numComponents: 2,
+                data: verts,
+            },
+            a_color: {
+                numComponents: 3,
+                data: colors,
+            },
+        };
+        this.specBuffers = twgl.createBufferInfoFromArrays(this.gl, arrays);
     }
 
     public startNextFrame() {
@@ -92,9 +88,6 @@ export class Renderer {
     }
 
     public drawSpecBox(time: number) {
-        // const translations = [
-            // 0.0, 0.0, .1, .1, .2, .2,
-        // ];
         const translations = (() => {
             const res = [];
             const offset = .1;
@@ -106,30 +99,22 @@ export class Renderer {
             }
             return res;
         })();
-        this.gl.useProgram(this.specProgram);
+        this.gl.useProgram(this.specProgram.program);
 
-        this.gl.enableVertexAttribArray(this.A_SPEC_POS_LOC);
-        this.gl.enableVertexAttribArray(this.A_SPEC_COLOR_LOC);
-        this.gl.enableVertexAttribArray(this.A_SPEC_OFFSET_LOC);
+        const arrays: twgl.Arrays = {
+            a_translation: {
+                numComponents: 2,
+                data: translations,
+                divisor: 1,
+            },
+        };
+        this.specBuffers = twgl.createBufferInfoFromArrays(this.gl, arrays, this.specBuffers);
+        const vertexArrayInfo = twgl.createVertexArrayInfo(this.gl, this.specProgram, this.specBuffers);
+        twgl.setBuffersAndAttributes(this.gl, this.specProgram, vertexArrayInfo);
+        twgl.drawBufferInfo(this.gl, vertexArrayInfo, this.gl.TRIANGLES, vertexArrayInfo.numElements, 0, 100);
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertBuffer);
-        this.gl.vertexAttribPointer(this.A_SPEC_POS_LOC, 2, this.gl.FLOAT, false, 0, 0);
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
-        this.gl.vertexAttribPointer(this.A_SPEC_COLOR_LOC, 3, this.gl.FLOAT, false, 0, 0);
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.offsetBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(translations), this.gl.STATIC_DRAW);
-        this.gl.vertexAttribPointer(this.A_SPEC_OFFSET_LOC, 2, this.gl.FLOAT, false, 0, 0);
-
-        this.ext.vertexAttribDivisorANGLE(this.A_SPEC_OFFSET_LOC, 1);
-        this.ext.drawArraysInstancedANGLE(this.gl.TRIANGLES, 0, 6, 100);
-        // iOS rendering issue
-        this.ext.vertexAttribDivisorANGLE(this.A_SPEC_OFFSET_LOC, 0);
-
-        this.gl.disableVertexAttribArray(this.A_SPEC_POS_LOC);
-        this.gl.disableVertexAttribArray(this.A_SPEC_COLOR_LOC);
-        this.gl.disableVertexAttribArray(this.A_SPEC_OFFSET_LOC);
+        // Unset divisor so this works properly on iOS
+        unsetDivisors(this.gl, this.specProgram, ["a_translation"]);
     }
 
     public drawBoxes(verts: Float32Array, size: number, color: IColor) {
@@ -147,33 +132,5 @@ export class Renderer {
         twgl.setBuffersAndAttributes(this.gl, this.program, bufferInfo);
         twgl.setUniforms(this.program, uniforms);
         twgl.drawBufferInfo(this.gl, bufferInfo, this.gl.POINTS);
-    }
-
-    private initializeSpecVertShader() {
-        return createShader(this.gl, this.gl.VERTEX_SHADER, `
-            attribute vec2 a_position;
-            attribute vec3 a_color;
-
-            attribute vec2 a_translation;
-
-            varying vec3 f_color;
-
-            void main() {
-                gl_Position = vec4(a_position + a_translation, 0, 1);
-                f_color = a_color;
-            }
-        `);
-    }
-
-    private initializeSpecFragShader() {
-        return createShader(this.gl, this.gl.FRAGMENT_SHADER, `
-            precision mediump float;
-
-            varying vec3 f_color;
-
-            void main() {
-                gl_FragColor = vec4(f_color, 1.0);
-            }
-        `);
     }
 }
