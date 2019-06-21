@@ -48,10 +48,16 @@
 
       attribute vec2 a_translation;
 
+      uniform vec2 u_resolution;
+
       varying vec3 f_color;
 
       void main() {
-          gl_Position = vec4(a_position + a_translation, 0, 1);
+          vec2 zeroToOne = (a_position + a_translation) / u_resolution;
+          vec2 zeroToTwo = zeroToOne * 2.0;
+          vec2 clipSpace = zeroToTwo - 1.0;
+
+          gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
           f_color = a_color;
       }
     </script>

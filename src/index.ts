@@ -21,11 +21,14 @@ function renderLoop(time: number) {
         const offset = .1;
         for (let y = -10; y < 10; y += 2) {
             for (let x = -10; x < 10; x += 2) {
-                res.push(x / 10 + offset + Math.cos(time / 500) * .05);
-                res.push(y / 10 + offset + Math.sin(time / 500) * .05);
+                const sx = x / 10 + offset + Math.cos(time / 500) * .05;
+                res.push(sx * width / 2);
+                const sy = y / 10 + offset + Math.sin(time / 500) * .05;
+                res.push(sy * height / 2);
             }
         }
         return new Float32Array(res);
+        // return new Float32Array([0, 0]);
     })();
 
     renderer.startNextFrame();

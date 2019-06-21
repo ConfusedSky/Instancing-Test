@@ -3,20 +3,34 @@ import { unsetDivisors } from "../glUtils";
 
 export class InstancedRenderer {
     private gl: WebGLRenderingContext;
+    private width: number;
+    private height: number;
+
     private programInfo: twgl.ProgramInfo;
     private bufferInfo: twgl.BufferInfo;
 
-    constructor(gl: WebGLRenderingContext) {
+    constructor(gl: WebGLRenderingContext, width: number, height: number) {
         this.gl = gl;
+        this.width = width;
+        this.height = height;
 
         this.programInfo = twgl.createProgramInfo(this.gl, ["s-vs", "s-fs"]);
 
+        if (!this.programInfo.program) {
+            throw new Error("Instanced renderer failed to compile");
+        }
+
+        const boxWidth = width / 20;
+        const boxHeight = height / 20;
+        const x = width / 2 - boxWidth / 2;
+        const y = height / 2 - boxHeight / 2;
+
         const verts = [
             // positions
-            -0.05, -0.05,
-            -0.05,  0.05,
-             0.05, -0.05,
-             0.05,  0.05,
+                       x, y + boxHeight,
+                       x,             y,
+            x + boxWidth, y + boxHeight,
+            x + boxWidth,             y,
         ];
         const colors = [
             0.0, 0.0, 1.0,
@@ -54,9 +68,15 @@ export class InstancedRenderer {
                 divisor: 1,
             },
         };
+
+        const uniforms = {
+            u_resolution: [this.width, this.height],
+        };
+
         this.bufferInfo = twgl.createBufferInfoFromArrays(this.gl, arrays, this.bufferInfo);
         const vertexArrayInfo = twgl.createVertexArrayInfo(this.gl, this.programInfo, this.bufferInfo);
         twgl.setBuffersAndAttributes(this.gl, this.programInfo, vertexArrayInfo);
+        twgl.setUniforms(this.programInfo, uniforms);
         twgl.drawBufferInfo(
             this.gl,
             vertexArrayInfo,

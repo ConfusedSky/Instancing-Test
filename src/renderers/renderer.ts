@@ -43,7 +43,7 @@ export class Renderer {
         }
 
         this.dots = new DotsRenderer(this.gl, width, height);
-        this.instanced = new InstancedRenderer(this.gl);
+        this.instanced = new InstancedRenderer(this.gl, width, height);
     }
 
     public startNextFrame() {

@@ -3,9 +3,10 @@ import { IColor } from "./renderer";
 
 export class DotsRenderer {
     private gl: WebGLRenderingContext;
-    private program: twgl.ProgramInfo;
     private width: number;
     private height: number;
+
+    private program: twgl.ProgramInfo;
 
     constructor(gl: WebGLRenderingContext, width: number, height: number) {
         this.gl = gl;
@@ -13,6 +14,10 @@ export class DotsRenderer {
         this.height = height;
 
         this.program = twgl.createProgramInfo(gl, ["vs", "fs"]);
+
+        if (!this.program.program) {
+            throw new Error("Dots renderer failed to compile");
+        }
     }
 
     public render(verts: Float32Array, color: IColor, size: number) {
