@@ -9,20 +9,29 @@ fps = new FPSCounter();
 
 const BLACK: IColor = {r: 0, g: 0, b: 0, a: 1};
 
-function renderLoop(current: number) {
+function renderLoop(time: number) {
     requestAnimationFrame(renderLoop);
     fps.render();
 
-    const v = [50, 50, 100, 100];
-    const v2 = new Float32Array(v);
+    const v = new Float32Array([50, 50, 100, 100]);
+    const v2 = new Float32Array([55, 56, 105, 105]);
 
-    const v3 = [55, 56, 105, 105];
-    const v4 = new Float32Array(v3);
+    const instances = (() => {
+        const res = [];
+        const offset = .1;
+        for (let y = -10; y < 10; y += 2) {
+            for (let x = -10; x < 10; x += 2) {
+                res.push(x / 10 + offset + Math.cos(time / 500) * .05);
+                res.push(y / 10 + offset + Math.sin(time / 500) * .05);
+            }
+        }
+        return new Float32Array(res);
+    })();
 
     renderer.startNextFrame();
-    renderer.drawSpecBox(current);
+    renderer.drawSpecBox(instances);
+    renderer.drawBoxes(v, 10, BLACK);
     renderer.drawBoxes(v2, 10, BLACK);
-    renderer.drawBoxes(v4, 10, BLACK);
 }
 
 requestAnimationFrame(renderLoop);
