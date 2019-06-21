@@ -54,8 +54,8 @@ export class Renderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
 
-    public drawSpecBox(instances: Float32Array) {
-        this.instanced.render(instances);
+    public drawSpecBox(width: number, height: number, instances: Float32Array) {
+        this.instanced.render(width, height, instances);
     }
 
     public drawBoxes(verts: Float32Array, size: number, color: IColor) {

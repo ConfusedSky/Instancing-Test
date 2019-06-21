@@ -20,17 +20,12 @@ export class InstancedRenderer {
             throw new Error("Instanced renderer failed to compile");
         }
 
-        const boxWidth = width / 20;
-        const boxHeight = height / 20;
-        const x = width / 2 - boxWidth / 2;
-        const y = height / 2 - boxHeight / 2;
-
         const verts = [
             // positions
-                       x, y + boxHeight,
-                       x,             y,
-            x + boxWidth, y + boxHeight,
-            x + boxWidth,             y,
+            0, 1,
+            0, 0,
+            1, 1,
+            1, 0,
         ];
         const colors = [
             0.0, 0.0, 1.0,
@@ -58,7 +53,7 @@ export class InstancedRenderer {
         this.bufferInfo = twgl.createBufferInfoFromArrays(this.gl, arrays);
     }
 
-    public render(instances: Float32Array) {
+    public render(width: number, height: number, instances: Float32Array) {
         this.gl.useProgram(this.programInfo.program);
 
         const arrays: twgl.Arrays = {
@@ -71,6 +66,7 @@ export class InstancedRenderer {
 
         const uniforms = {
             u_resolution: [this.width, this.height],
+            u_size: [width, height],
         };
 
         this.bufferInfo = twgl.createBufferInfoFromArrays(this.gl, arrays, this.bufferInfo);

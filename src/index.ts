@@ -18,21 +18,20 @@ function renderLoop(time: number) {
 
     const instances = (() => {
         const res = [];
-        const offset = .1;
-        for (let y = -10; y < 10; y += 2) {
-            for (let x = -10; x < 10; x += 2) {
-                const sx = x / 10 + offset + Math.cos(time / 500) * .05;
-                res.push(sx * width / 2);
-                const sy = y / 10 + offset + Math.sin(time / 500) * .05;
-                res.push(sy * height / 2);
+        const offset = .025;
+        for (let y = 0; y < 10; y += 1) {
+            for (let x = 0; x < 10; x += 1) {
+                const sx = x / 10 + (1 + Math.cos(time / 500)) * offset;
+                res.push(sx * width);
+                const sy = y / 10 + (1 + Math.sin(time / 500)) * offset;
+                res.push(sy * height);
             }
         }
         return new Float32Array(res);
-        // return new Float32Array([0, 0]);
     })();
 
     renderer.startNextFrame();
-    renderer.drawSpecBox(instances);
+    renderer.drawSpecBox(width / 20, height / 20, instances);
     renderer.drawBoxes(v, 10, BLACK);
     renderer.drawBoxes(v2, 10, BLACK);
 }
