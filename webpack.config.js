@@ -14,11 +14,15 @@ module.exports = {
         test:/\.ts$/,
         use: "ts-loader",
         exclude: /node_modules/
-      }
+      },
+      {
+        test: /\.frag|.vert$/i,
+        use: 'raw-loader',
+      },
     ]
   },
   resolve: {
-    extensions: [ '.ts', '.js', '.wasm' ]
+    extensions: [ '.ts', '.js', '.wasm', '.frag', '.vert' ]
   },
   plugins: [
     new CopyWebpackPlugin(['index.html'])

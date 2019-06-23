@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "devDependencies": {
+    "@types/node": "^12.0.10",
     "copy-webpack-plugin": "^5.0.0",
     "hello-wasm-pack": "^0.1.0",
     "ts-loader": "^6.0.1",
@@ -37,6 +38,7 @@
     "webpack-dev-server": "^3.1.5"
   },
   "dependencies": {
+    "raw-loader": "^3.0.0",
     "twgl.js": "^4.10.1"
   }
 }

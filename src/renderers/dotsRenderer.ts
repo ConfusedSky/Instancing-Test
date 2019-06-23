@@ -1,6 +1,9 @@
 import * as twgl from "twgl.js";
 import { IColor } from "./renderer";
 
+const vertShader = require("./dotsVert").default as string;
+const fragShader = require("./dotsFrag").default as string;
+
 export class DotsRenderer {
     private gl: WebGLRenderingContext;
     private width: number;
@@ -13,7 +16,7 @@ export class DotsRenderer {
         this.width = width;
         this.height = height;
 
-        this.program = twgl.createProgramInfo(gl, ["vs", "fs"]);
+        this.program = twgl.createProgramInfo(this.gl, [vertShader, fragShader]);
 
         if (!this.program.program) {
             throw new Error("Dots renderer failed to compile");

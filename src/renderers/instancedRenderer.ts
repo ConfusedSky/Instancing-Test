@@ -1,5 +1,7 @@
 import * as twgl from "twgl.js";
 import { unsetDivisors } from "../glUtils";
+const vertShader = require("./instancedVert").default as string;
+const fragShader = require("./instancedFrag").default as string;
 
 export class InstancedRenderer {
     private gl: WebGLRenderingContext;
@@ -14,7 +16,7 @@ export class InstancedRenderer {
         this.width = width;
         this.height = height;
 
-        this.programInfo = twgl.createProgramInfo(this.gl, ["s-vs", "s-fs"]);
+        this.programInfo = twgl.createProgramInfo(this.gl, [vertShader, fragShader]);
 
         if (!this.programInfo.program) {
             throw new Error("Instanced renderer failed to compile");
